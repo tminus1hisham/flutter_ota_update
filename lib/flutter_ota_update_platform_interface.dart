@@ -5,7 +5,8 @@ import 'flutter_ota_update_method_channel.dart';
 /// Thrown when checking for, downloading or installing an update fails.
 ///
 /// [code] is one of `HTTP_ERROR`, `NO_ASSET`, `NO_CHECKSUM`,
-/// `DOWNLOAD_FAILED`, `CHECKSUM_MISMATCH` or `INSTALL_FAILED`.
+/// `PERMISSION_NOT_DECLARED`, `DOWNLOAD_FAILED`, `CHECKSUM_MISMATCH`,
+/// `INSTALL_FAILED` or `UNSUPPORTED_PLATFORM`.
 class OtaException implements Exception {
   const OtaException(this.code, this.message);
 

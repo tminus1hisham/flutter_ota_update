@@ -1,7 +1,9 @@
 package io.github.tminus1hisham.flutter_ota_update
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
 import androidx.core.content.FileProvider
@@ -97,6 +99,20 @@ class FlutterOtaUpdatePlugin :
     }
 
     private fun downloadAndInstall(call: MethodCall, result: Result) {
+        // Fail before downloading if the app never opted in; otherwise the system
+        // installer refuses later with a confusing message.
+        val requested = context.packageManager
+            .getPackageInfo(context.packageName, PackageManager.GET_PERMISSIONS)
+            .requestedPermissions
+        if (requested?.contains(Manifest.permission.REQUEST_INSTALL_PACKAGES) != true) {
+            result.error(
+                "PERMISSION_NOT_DECLARED",
+                "Add <uses-permission android:name=\"android.permission.REQUEST_INSTALL_PACKAGES\" /> " +
+                    "to android/app/src/main/AndroidManifest.xml",
+                null
+            )
+            return
+        }
         val url = call.argument<String>("url")!!
         val headers = call.argument<Map<String, String>>("headers") ?: emptyMap()
         val sha256 = call.argument<String>("sha256")

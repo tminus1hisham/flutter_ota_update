@@ -11,8 +11,17 @@ class MethodChannelFlutterOtaUpdate extends FlutterOtaUpdatePlatform {
 
   @override
   Future<String> getAppVersion() async {
-    return (await methodChannel.invokeMethod<String>('getAppVersion'))!;
+    try {
+      return (await methodChannel.invokeMethod<String>('getAppVersion'))!;
+    } on MissingPluginException {
+      throw _unsupported;
+    }
   }
+
+  static const _unsupported = OtaException(
+    'UNSUPPORTED_PLATFORM',
+    'flutter_ota_update only supports Android',
+  );
 
   @override
   Future<void> downloadAndInstall({
@@ -37,6 +46,8 @@ class MethodChannelFlutterOtaUpdate extends FlutterOtaUpdatePlatform {
       });
     } on PlatformException catch (e) {
       throw OtaException(e.code, e.message);
+    } on MissingPluginException {
+      throw _unsupported;
     } finally {
       methodChannel.setMethodCallHandler(null);
     }

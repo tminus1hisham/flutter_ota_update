@@ -46,6 +46,20 @@ void main() {
     ]);
   });
 
+  test('reports UNSUPPORTED_PLATFORM when no native side exists', () async {
+    // No mock handler registered: this is what iOS/web/desktop see.
+    final unsupported = isA<OtaException>().having(
+      (e) => e.code,
+      'code',
+      'UNSUPPORTED_PLATFORM',
+    );
+    await expectLater(platform.getAppVersion(), throwsA(unsupported));
+    await expectLater(
+      platform.downloadAndInstall(url: 'u', fileName: 'f'),
+      throwsA(unsupported),
+    );
+  });
+
   test('downloadAndInstall maps PlatformException to OtaException', () async {
     messenger.setMockMethodCallHandler(channel, (call) async {
       throw PlatformException(code: 'CHECKSUM_MISMATCH', message: 'bad');

@@ -2,7 +2,7 @@
 
 OTA app updates from GitHub Releases. Check for a newer release, download the APK, verify its SHA-256 and open the Android installer, all without an app store.
 
-Android only.
+**Android only, and not for apps published on Google Play.** See [Where you can use it](#where-you-can-use-it).
 
 ## Features
 
@@ -19,7 +19,28 @@ dependencies:
   flutter_ota_update: ^0.0.1
 ```
 
-No manifest changes are needed. The plugin adds the `INTERNET` and `REQUEST_INSTALL_PACKAGES` permissions and its own `FileProvider`.
+### Android setup (required)
+
+Add this permission to `android/app/src/main/AndroidManifest.xml`, inside `<manifest>`:
+
+```xml
+<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+```
+
+The plugin deliberately does not add it for you, because Google Play restricts it (see below). Without it, `downloadAndInstall` throws `PERMISSION_NOT_DECLARED` before downloading anything. The plugin adds `INTERNET` and its own `FileProvider` itself.
+
+## Where you can use it
+
+| Distribution | Works? |
+|---|---|
+| Sideloaded APKs, GitHub/website downloads | Yes |
+| Enterprise / internal apps, MDM, kiosk devices | Yes |
+| F-Droid and other stores that allow self-updates | Yes |
+| **Google Play** | **No.** Play's [Device and Network Abuse policy](https://support.google.com/googleplay/android-developer/answer/9888379) forbids apps from updating themselves outside Play, and `REQUEST_INSTALL_PACKAGES` is a [restricted permission](https://support.google.com/googleplay/android-developer/answer/12085295) not allowed for self-updates. |
+| **iOS** | **No.** iOS does not allow apps to install apps outside the App Store, TestFlight or enterprise MDM. Calls throw `UNSUPPORTED_PLATFORM`. |
+| Web, Windows, macOS, Linux | No. Calls throw `UNSUPPORTED_PLATFORM`. |
+
+If one codebase ships to Play **and** elsewhere, use a [product flavor](https://docs.flutter.dev/deployment/flavors) and declare `REQUEST_INSTALL_PACKAGES` only in the non-Play flavor's manifest (e.g. `android/app/src/sideload/AndroidManifest.xml`). Guard the update UI with your own flag so the Play build never calls this plugin.
 
 ## Usage
 
@@ -59,9 +80,11 @@ Failures throw `OtaException` with one of these `code`s:
 | `HTTP_ERROR` | GitHub API returned non-200 (no release yet, wrong repo, private repo without a token, rate limit). |
 | `NO_ASSET` | The latest release has no asset matching `assetPattern`. |
 | `NO_CHECKSUM` | No SHA-256 is available and `allowUnverified` is false. |
+| `PERMISSION_NOT_DECLARED` | The app's manifest lacks `REQUEST_INSTALL_PACKAGES` (see Android setup). Nothing was downloaded. |
 | `DOWNLOAD_FAILED` | Network or storage error while downloading. |
 | `CHECKSUM_MISMATCH` | The downloaded file does not match the expected SHA-256. It is deleted. |
 | `INSTALL_FAILED` | The installer could not be opened. |
+| `UNSUPPORTED_PLATFORM` | Called on iOS, web or desktop. |
 
 ## Publishing a release your app can find
 
@@ -73,7 +96,6 @@ GitHub records a SHA-256 digest for every uploaded asset, so no extra step is ne
 
 ## Good to know
 
-- **Google Play:** Play policy forbids apps from updating themselves outside Play and restricts `REQUEST_INSTALL_PACKAGES`. Use this for sideloaded, enterprise or internal builds, not Play Store builds.
 - **Tokens in apps can be extracted.** If you need one, use a fine-grained, read-only token scoped to the single repo.
 - Only the latest non-draft, non-pre-release release is considered.
 - Pre-release suffixes are compared as plain strings (`rc.10` sorts before `rc.2`).
