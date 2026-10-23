@@ -2,6 +2,20 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'flutter_ota_update_method_channel.dart';
 
+/// Thrown when checking for, downloading or installing an update fails.
+///
+/// [code] is one of `HTTP_ERROR`, `NO_ASSET`, `NO_CHECKSUM`,
+/// `DOWNLOAD_FAILED`, `CHECKSUM_MISMATCH` or `INSTALL_FAILED`.
+class OtaException implements Exception {
+  const OtaException(this.code, this.message);
+
+  final String code;
+  final String? message;
+
+  @override
+  String toString() => 'OtaException($code): $message';
+}
+
 abstract class FlutterOtaUpdatePlatform extends PlatformInterface {
   /// Constructs a FlutterOtaUpdatePlatform.
   FlutterOtaUpdatePlatform() : super(token: _token);
@@ -23,7 +37,20 @@ abstract class FlutterOtaUpdatePlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  Future<String?> getPlatformVersion() {
-    throw UnimplementedError('platformVersion() has not been implemented.');
+  /// The installed app's version name (e.g. `1.2.3`).
+  Future<String> getAppVersion() {
+    throw UnimplementedError('getAppVersion() has not been implemented.');
+  }
+
+  /// Downloads [url] to [fileName], verifies it against [sha256] when given,
+  /// and opens the system installer. Completes once the installer is shown.
+  Future<void> downloadAndInstall({
+    required String url,
+    required String fileName,
+    Map<String, String> headers = const {},
+    String? sha256,
+    void Function(int received, int total)? onProgress,
+  }) {
+    throw UnimplementedError('downloadAndInstall() has not been implemented.');
   }
 }

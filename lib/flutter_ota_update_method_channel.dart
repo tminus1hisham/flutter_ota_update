@@ -10,10 +10,35 @@ class MethodChannelFlutterOtaUpdate extends FlutterOtaUpdatePlatform {
   final methodChannel = const MethodChannel('flutter_ota_update');
 
   @override
-  Future<String?> getPlatformVersion() async {
-    final version = await methodChannel.invokeMethod<String>(
-      'getPlatformVersion',
-    );
-    return version;
+  Future<String> getAppVersion() async {
+    return (await methodChannel.invokeMethod<String>('getAppVersion'))!;
+  }
+
+  @override
+  Future<void> downloadAndInstall({
+    required String url,
+    required String fileName,
+    Map<String, String> headers = const {},
+    String? sha256,
+    void Function(int received, int total)? onProgress,
+  }) async {
+    methodChannel.setMethodCallHandler((call) async {
+      if (call.method == 'progress') {
+        final args = call.arguments as Map;
+        onProgress?.call(args['received'] as int, args['total'] as int);
+      }
+    });
+    try {
+      await methodChannel.invokeMethod<void>('downloadAndInstall', {
+        'url': url,
+        'fileName': fileName,
+        'headers': headers,
+        'sha256': sha256,
+      });
+    } on PlatformException catch (e) {
+      throw OtaException(e.code, e.message);
+    } finally {
+      methodChannel.setMethodCallHandler(null);
+    }
   }
 }
