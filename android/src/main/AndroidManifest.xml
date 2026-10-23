@@ -1,3 +1,16 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-  package="io.github.tminus1hisham.flutter_ota_update">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+    <application>
+        <provider
+            android:name="io.github.tminus1hisham.flutter_ota_update.OtaFileProvider"
+            android:authorities="${applicationId}.flutter_ota_update.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/flutter_ota_update_file_paths" />
+        </provider>
+    </application>
 </manifest>
