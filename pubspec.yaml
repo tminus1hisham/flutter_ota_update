@@ -1,7 +1,10 @@
 name: flutter_ota_update
 description: "OTA app updates from GitHub Releases. Download, verify and install new versions without an app store."
+
+repository: https://github.com/tminus1hisham/flutter_ota_update
+issue_tracker: https://github.com/tminus1hisham/flutter_ota_update/issues
+
 version: 0.0.1
-homepage:
 
 environment:
   sdk: ^3.11.0
