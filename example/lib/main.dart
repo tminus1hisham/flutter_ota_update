@@ -1,7 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:async';
-
-import 'package:flutter/services.dart';
 import 'package:flutter_ota_update/flutter_ota_update.dart';
 
 void main() {
@@ -16,43 +13,86 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  String _platformVersion = 'Unknown';
-  final _flutterOtaUpdatePlugin = FlutterOtaUpdate();
+  // Point this at the repo whose releases carry your APK.
+  final _ota = FlutterOtaUpdate(
+    owner: 'tminus1hisham',
+    repo: 'flutter_ota_update',
+  );
 
-  @override
-  void initState() {
-    super.initState();
-    initPlatformState();
+  OtaRelease? _release;
+  String _status = 'Tap the button to check for updates.';
+  double? _progress;
+  bool _busy = false;
+
+  Future<void> _check() async {
+    setState(() => _busy = true);
+    try {
+      final release = await _ota.checkForUpdate();
+      setState(() {
+        _release = release;
+        _status = release == null
+            ? 'You are on the latest version.'
+            : 'Version ${release.version} is available.';
+      });
+    } on Exception catch (e) {
+      setState(() => _status = 'Check failed: $e');
+    } finally {
+      setState(() => _busy = false);
+    }
   }
 
-  // Platform messages are asynchronous, so we initialize in an async method.
-  Future<void> initPlatformState() async {
-    String platformVersion;
-    // Platform messages may fail, so we use a try/catch PlatformException.
-    // We also handle the message potentially returning null.
-    try {
-      platformVersion =
-          await _flutterOtaUpdatePlugin.getPlatformVersion() ?? 'Unknown platform version';
-    } on PlatformException {
-      platformVersion = 'Failed to get platform version.';
-    }
-
-    // If the widget was removed from the tree while the asynchronous platform
-    // message was in flight, we want to discard the reply rather than calling
-    // setState to update our non-existent appearance.
-    if (!mounted) return;
-
+  Future<void> _install() async {
     setState(() {
-      _platformVersion = platformVersion;
+      _busy = true;
+      _progress = 0;
     });
+    try {
+      await _ota.downloadAndInstall(
+        _release!,
+        onProgress: (received, total) =>
+            setState(() => _progress = total > 0 ? received / total : null),
+      );
+      setState(() => _status = 'Installer opened.');
+    } on OtaException catch (e) {
+      setState(() => _status = 'Update failed: ${e.message}');
+    } finally {
+      setState(() {
+        _busy = false;
+        _progress = null;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(title: const Text('Plugin example app')),
-        body: Center(child: Text('Running on: $_platformVersion\n')),
+        appBar: AppBar(title: const Text('flutter_ota_update example')),
+        body: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(_status),
+              if (_release != null && _release!.notes.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(_release!.notes),
+              ],
+              const SizedBox(height: 16),
+              if (_busy) LinearProgressIndicator(value: _progress),
+              const SizedBox(height: 16),
+              FilledButton(
+                onPressed: _busy ? null : _check,
+                child: const Text('Check for updates'),
+              ),
+              if (_release != null)
+                OutlinedButton(
+                  onPressed: _busy ? null : _install,
+                  child: const Text('Download & install'),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }

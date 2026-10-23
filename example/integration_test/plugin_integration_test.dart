@@ -1,11 +1,5 @@
-// This is a basic Flutter integration test.
-//
-// Since integration tests run in a full Flutter application, they can interact
-// with the host side of a plugin implementation, unlike Dart unit tests.
-//
-// For more information about Flutter integration tests, please see
-// https://flutter.dev/to/integration-testing
-
+// Integration tests run in a full Flutter app, so they reach the real
+// Android side of the plugin. Run with: flutter test integration_test
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -14,11 +8,8 @@ import 'package:flutter_ota_update/flutter_ota_update.dart';
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('getPlatformVersion test', (WidgetTester tester) async {
-    final FlutterOtaUpdate plugin = FlutterOtaUpdate();
-    final String? version = await plugin.getPlatformVersion();
-    // The version string depends on the host platform running the test, so
-    // just assert that some non-empty string is returned.
-    expect(version?.isNotEmpty, true);
+  testWidgets('getAppVersion returns the installed version', (tester) async {
+    final ota = FlutterOtaUpdate(owner: 'o', repo: 'r');
+    expect(await ota.getAppVersion(), isNotEmpty);
   });
 }
